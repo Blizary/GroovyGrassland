@@ -17,3 +17,7 @@ class TEXT:
 
     def UpdateText(self):
         self.texture = self.font.render(str(self.content), False, self.color)
+
+    def ResetAmount(self):
+        self.content = 0
+        self.UpdateText()

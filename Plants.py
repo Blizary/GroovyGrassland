@@ -39,6 +39,8 @@ class PLANTPOT:
             # reset
             self.UpdatePlantStage(0)
             self.plantLife = 70
+            return -10
+        return 0
 
     def PlantLife(self):
         if self.plantState != 0:
@@ -60,6 +62,8 @@ class PLANTPOT:
         if self.plantState !=0:
             if self.plantLife < 100:
                 self.plantLife += amount
+                return 1
+        return 0
 
     #Reset plant back to original state of the game
     def ResetPlant(self):
@@ -100,8 +104,10 @@ class PLANTLINE:
             self.pots.append(newPlantPot)
 
     def WaterPlants(self):
+        score = []
         for number in range(self.numOfPots):
-            self.pots[number].WaterPlant(2)
+            score.append(self.pots[number].WaterPlant(5))
+        return score
 
     def ResetPlantLines(self):
         for number in range(self.numOfPots):

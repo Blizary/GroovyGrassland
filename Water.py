@@ -15,16 +15,15 @@ class WATERTOWER:
         if self.waterAmount !=0:
             self.waterAmount -= amount
             self.currentWaterLvl = (self.waterAmount * self.maxWaterLvl) / 100
-        else:
-            print ("OUT OF WATER!")
+
 
 
     def Filling(self, amount):
         if self.waterAmount <100:
             self.waterAmount += amount
             self.currentWaterLvl = (self.waterAmount * self.maxWaterLvl) / 100
-        else:
-            print ("TANK IS FULL")
+            return 1
+        return 0
 
     def DrawTank(self):
         pygame.draw.rect(self.screen, (255, 0, 0), (self.rect.x + 8, self.rect.y - 7, 20, 5))
