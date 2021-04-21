@@ -61,6 +61,12 @@ class PLANTPOT:
             if self.plantLife < 100:
                 self.plantLife += amount
 
+    #Reset plant back to original state of the game
+    def ResetPlant(self):
+        self.plantLife = 100
+        self.plantState = 0
+        self.currentHealthBarSize = 20
+
     # general update function of the obj, contains the timer for the plant growth and calls other functions
     def Update(self):
         self.PlantLife()
@@ -96,3 +102,8 @@ class PLANTLINE:
     def WaterPlants(self):
         for number in range(self.numOfPots):
             self.pots[number].WaterPlant(2)
+
+    def ResetPlantLines(self):
+        for number in range(self.numOfPots):
+            self.pots[number].ResetPlant()
+        self.waterTank.ResetTank()
