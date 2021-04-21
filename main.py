@@ -11,7 +11,7 @@ import Button
 FPS =60
 #Player or AI
 # just a variable to control if it is a player playing or an AI
-playerPlaying = False
+playerPlaying = True
 
 #Moves
 moves = ["Up", "Down", "Water", "Fill"]
@@ -60,107 +60,120 @@ player = Player.PLAYER((290, firstLineY), numbOfPlantLines,screen)
 
 
 
+class Game():
 
+    def __init__(self):
 
-#Draw function
-def draw_window(state):
-    screen.blit(LoadAssets.backgroundImg, (0, 0))
-    screen.blit(player.image, player.rect)
-    screen.blit(score.texture, score.pos)
-    player.DrawLifes()
+        self.wavesTimerInner = 5
+        self.currentWave = 0
+        self.gameState = 0
+        self.mousepos = (0, 0)
+        self.aiLoops = 5
 
-    for lines in range(numbOfPlantLines):
-        for number in range(numbOfPlantsPerLine):
-            garden[lines].pots[number].DrawPlantPot()
-        garden[lines].waterTank.DrawTank()
+    # Draw function
+    def draw_window(self):
+        screen.blit(LoadAssets.backgroundImg, (0, 0))
+        screen.blit(player.image, player.rect)
+        screen.blit(score.texture, score.pos)
+        player.DrawLifes()
 
-    if state == 0:
-        playButton.draw(screen, None)
+        for lines in range(numbOfPlantLines):
+            for number in range(numbOfPlantsPerLine):
+                garden[lines].pots[number].DrawPlantPot()
+            garden[lines].waterTank.DrawTank()
 
-    if state == 2:
-        screen.blit(failedGame.texture, failedGame.pos)
-        retryButton.draw(screen, None)
+        if self.gameState == 0:
+            playButton.draw(screen, None)
 
-    pygame.display.update()
+        if self.gameState == 2:
+            screen.blit(failedGame.texture, failedGame.pos)
+            retryButton.draw(screen, None)
 
+        pygame.display.update()
 
-def UpdatePlants():
+    def UpdatePlants(self):
 
-    for lines in range(numbOfPlantLines):
-        for number in range(numbOfPlantsPerLine):
-            garden[lines].pots[number].Update()
+        for lines in range(numbOfPlantLines):
+            for number in range(numbOfPlantsPerLine):
+                garden[lines].pots[number].Update()
 
+    def PickRandPlant(self):
+        plantsAvailable = []
+        for plant in range(len(garden)):
+            for pot in range(len(garden[plant].pots)):
+                if garden[plant].pots[pot].plantState == 0:
+                    plantsAvailable.append(garden[plant].pots[pot])
 
-
-def PickRandPlant():
-    plantsAvailable = []
-    for plant in range(len(garden)):
-        for pot in range (len(garden[plant].pots)):
-            if garden[plant].pots[pot].plantState == 0:
-                plantsAvailable.append(garden[plant].pots[pot])
-
-    if len(plantsAvailable)!= 0:
-        randInt = random.randint(0, len(plantsAvailable)-1)
-        randPlant = plantsAvailable[randInt]
-        return randPlant
-    else:
-        return -1
-
-def ResetGame(player):
-    print("reseting game")
-    #reseting plants
-    for lines in range(numbOfPlantLines):
-        for number in range(numbOfPlantsPerLine):
-            garden[lines].ResetPlantLines()
-
-    player.currentlifes = player.maxlifes
-    wavesTimerInner = 5
-    currentWave = 0
-    gameState = 1
-    return gameState, currentWave, wavesTimerInner
-
-
-
-def PlantLoop(wavesTimerInner,currentWave):
-    # check is plants died
-    for lines in range(numbOfPlantLines):
-        for number in range(numbOfPlantsPerLine):
-            garden[lines].pots[number].PlantDeath(player)
-
-    # algo for plants
-    if wavesTimerInner <= 0:
-        for plant in range(waves[currentWave]):
-            randPlant = PickRandPlant()
-            if randPlant != -1:
-                randPlant.UpdatePlantStage(1)
-        wavesTimerInner = wavesTimer
-        if currentWave == len(waves) - 1:
-            currentWave = 0
+        if len(plantsAvailable) != 0:
+            randInt = random.randint(0, len(plantsAvailable) - 1)
+            randPlant = plantsAvailable[randInt]
+            return randPlant
         else:
-            currentWave += 1
-    else:
-        wavesTimerInner -= 0.1
+            return -1
 
-    return wavesTimerInner, currentWave
+    def ResetGame(self, player):
+
+        print("reseting game")
+        # reseting plants
+        for lines in range(numbOfPlantLines):
+            for number in range(numbOfPlantsPerLine):
+                garden[lines].ResetPlantLines()
+
+        player.currentlifes = player.maxlifes
+        self.wavesTimerInner = 5
+        self.currentWave = 0
+        self.gameState = 1
+
+
+    def PlantLoop(self):
+        # check is plants died
+        for lines in range(numbOfPlantLines):
+            for number in range(numbOfPlantsPerLine):
+                garden[lines].pots[number].PlantDeath(player)
+
+        # algo for plants
+        if self.wavesTimerInner <= 0:
+            for plant in range(waves[self.currentWave]):
+                randPlant = self.PickRandPlant()
+                if randPlant != -1:
+                    randPlant.UpdatePlantStage(1)
+            self.wavesTimerInner = wavesTimer
+            if self.currentWave == len(waves) - 1:
+                self. currentWave = 0
+            else:
+                self.currentWave += 1
+        else:
+            self.wavesTimerInner -= 0.1
+
+    def PlayerInputs(self, event):
+
+        if playerPlaying == True:
+
+            keysPressed = pygame.key.get_pressed()
+
+            self.mousepos = pygame.mouse.get_pos()
+
+            #Buttons
+            if self.gameState == 0 or self.gameState == 2:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if self.gameState == 0 and playButton.isOver(self.mousepos):
+                        self.gameState = 1
+
+                    if self.gameState == 2 and retryButton.isOver(self.mousepos):
+                        self.ResetGame(player)
 
 
 
+            if self.gameState == 1:
+                if keysPressed[pygame.K_DOWN]:
+                    player.PlayerMove(False)
+                if keysPressed[pygame.K_UP]:
+                    player.PlayerMove(True)
 
-#Game loop
-def main():
-    clock = pygame.time.Clock()
 
-    wavesTimerInner = 5
-    currentWave = 0
-    gameState = 0
-    mousepos = (0,0)
-    aiLoops = 5
+    def GameLoop(self):
 
-    running = True
-    while running:
-        clock.tick(FPS)
-
-        #Ai playing
+        # Ai playing
         if playerPlaying == False:
 
             for event in pygame.event.get():
@@ -168,71 +181,61 @@ def main():
                     running = False
 
             # Jump all the menus
-            if gameState == 0:
-                gameState = 1
+            if self.gameState == 0:
+                self.gameState = 1
 
-            if aiLoops > 0:
+            if self.aiLoops > 0:
                 if player.currentlifes <= 0:
-                    gameState = ResetGame(player)[0]
-                    currentWave = ResetGame(player)[1]
-                    wavesTimerInner = ResetGame(player)[2]
-                    aiLoops -= 1
+                    self.ResetGame(player)
+                    self.aiLoops -= 1
             else:
-                gameState = 2
+                self.gameState = 2
                 print("ended ai loops")
 
-            #Ai play loop
-            if gameState == 1:
-                wavesTimerInner = PlantLoop(wavesTimerInner, currentWave)[0]
-                currentWave = PlantLoop(wavesTimerInner, currentWave)[1]
-                UpdatePlants()
+            # Ai play loop
+            if self.gameState == 1:
+                self.PlantLoop()
+                self.UpdatePlants()
 
 
-        #player playing
+        # player playing
         else:
-            #Inputs
+            # Inputs
             # if key is pressed
             keysPressed = pygame.key.get_pressed()
 
-            for event in pygame.event.get():
-                mousepos = pygame.mouse.get_pos()
-                if event.type == pygame.QUIT:
-                    running = False
-
-                if gameState == 0 or gameState == 2:
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        if gameState ==0 and playButton.isOver(mousepos):
-                            gameState = 1
-
-                        if gameState == 2 and retryButton.isOver(mousepos):
-                            gameState = ResetGame(player)[0]
-                            currentWave = ResetGame(player)[1]
-                            wavesTimerInner = ResetGame(player)[2]
-
-
-                if gameState == 1:
-                    if keysPressed[pygame.K_DOWN]:
-                        player.PlayerMove(False)
-                    if keysPressed[pygame.K_UP]:
-                        player.PlayerMove(True)
-
-            if gameState == 1:
+            if self.gameState == 1:
                 if keysPressed[pygame.K_RIGHT]:
                     garden[player.currentLine].WaterPlants()
                     garden[player.currentLine].waterTank.WateringPlants(0.1)
                 elif keysPressed[pygame.K_SPACE]:
                     garden[player.currentLine].waterTank.Filling(1)
 
-            #Player Gameloop
-                wavesTimerInner = PlantLoop (wavesTimerInner, currentWave)[0]
-                currentWave = PlantLoop(wavesTimerInner, currentWave)[1]
-                UpdatePlants()
+                # Player Gameloop
+                self.PlantLoop()
+                self.UpdatePlants()
                 if player.currentlifes <= 0:
-                    gameState = 2
+                    self.gameState = 2
+
+        self.draw_window()
 
 
 
-        draw_window(gameState)
+#Game loop
+def main():
+    clock = pygame.time.Clock()
+    game = Game()
+
+
+    running = True
+    while running:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            game.PlayerInputs(event)
+            if event.type == pygame.QUIT:
+                running = False
+        game.GameLoop()
+
     pygame.quit()
 
 
