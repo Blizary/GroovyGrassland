@@ -171,9 +171,12 @@ class ApproxController(Controller):
 
     def getFeatures(self, state, action):
 
+        #some variables for watering, requires MANUAL change if changed in plants
+        wateringEffect = 5
+
         features = []
 
-
+        #Distance bettween player and lowest life plant
         lowestplant = 100
         lowestPlantLine = 0
         currrentGarden = state["garden"]
@@ -194,20 +197,36 @@ class ApproxController(Controller):
             if playerLayer== lowestPlantLine:
 
                 for (i, plantline) in enumerate(currrentGarden):
-                    difference = 2 if playerLayer == i else 0
-                    for plant in range(len(plantline) - 1):
-                        if plantline[plant]+ difference <= lowestplant:
-                            lowestplant = plantline[plant]
-                            lowestPlantLine = i
+                    if playerLayer == i:
+                        for plant in range(len(plantline) - 1):
+                            if plantline[plant]+ wateringEffect <= lowestplant:
+                                lowestplant = plantline[plant]
+                                lowestPlantLine = i
 
         playerdist = playerLayer - lowestPlantLine
-
         features.append(playerdist)
-        # Things you could try:
-        #
-        # 1. Choosing suitable features for your game
-        # 2. Seeing what affect different features have
 
+
+        #Difference between a full garden health and current health of the garden
+        healthyGarden = numbOfPlantsPerLine * numbOfPlantLines * 100
+        currentGardenHealth = 0
+
+        # state
+        for plantline in currrentGarden:
+            for plant in range(len(plantline) - 1):
+                currentGardenHealth += plantline[plant]
+
+        # action
+        if action == "Water":
+            # add effect
+            for (i, plantline) in enumerate(currrentGarden):
+                if playerLayer == i:
+                    for plant in range(len(plantline) - 1):
+                        if plantline[plant] < 100:
+                            currentGardenHealth += wateringEffect
+
+        difInGardenHealth = (currentGardenHealth - healthyGarden) / healthyGarden
+        features.append(difInGardenHealth)
 
         return features
 
@@ -434,7 +453,6 @@ class Game():
             #else:
                 #self.gameState = 2
                 #print("ended ai loops")
-
             # Ai play loop
 
             self.PlantLoop()

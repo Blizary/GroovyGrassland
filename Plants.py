@@ -15,13 +15,15 @@ class PLANTPOT:
         self.rect.center = pos
         self.plantState = 0
         self.plantImg = LoadAssets.plantStages[self.plantState]
-        self.plantLife = 70
+        self.plantLife = 100
         self.screen = screen
         self.growthTimer = 30
         self.growthTimerInner = self.growthTimer
         self.score = score
         self.maxHealthBarSize = 20
         self.currentHealthBarSize = 20
+        self.plantTick = 5
+        self.plantTickInner = 5
 
     # updates the state and changes the sprite
     def UpdatePlantStage(self, newState):
@@ -44,9 +46,13 @@ class PLANTPOT:
 
     def PlantLife(self):
         if self.plantState != 0:
-            if self.plantLife > 0:
-                self.plantLife -= 0.2
-                self.currentHealthBarSize = (self.plantLife * self.maxHealthBarSize)/100
+            if self.plantTickInner <= 0:
+                self.plantTickInner = self.plantTick
+                if self.plantLife > 0:
+                    self.plantLife -= 1
+                    self.currentHealthBarSize = (self.plantLife * self.maxHealthBarSize)/100
+            else:
+                self.plantTickInner -= 1
 
 
     # draws the plants
