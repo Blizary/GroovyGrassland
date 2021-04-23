@@ -23,3 +23,7 @@ waterTankImg = pygame.image.load(os.path.join('Assets', 'WaterTower.png'))
 #Player
 playerImg = pygame.image.load(os.path.join('Assets', 'gardener.png'))
 playerLife = pygame.image.load(os.path.join('Assets', 'ShovelLife.png'))
+
+#Music
+#The music used is a Royalty Free music from the website https://www.bensound.com/royalty-free-music/funky-groove
+#It is called Hip Jazz

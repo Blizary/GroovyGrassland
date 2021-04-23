@@ -304,7 +304,7 @@ class ApproxController(Controller):
         if random.uniform(0, 1) < 0.3:
             return random.choice( moves )
         else:
-            print(self.weights)
+            #print(self.weights)
             return self.exploit( state )
 
     def exploit(self, state):
@@ -520,6 +520,8 @@ class Game():
 #Game loop
 def main():
     clock = pygame.time.Clock()
+    pygame.mixer.music.load('GroovyMusic.mp3')
+    pygame.mixer.music.play(-1)
     game = Game()
     controller = ApproxController(None)
 
