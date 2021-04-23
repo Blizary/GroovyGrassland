@@ -41,7 +41,7 @@ class PLANTPOT:
             # reset
             self.UpdatePlantStage(0)
             self.plantLife = 70
-            return -10
+            return -100
         return 0
 
     def PlantLife(self):
@@ -68,7 +68,7 @@ class PLANTPOT:
         if self.plantState !=0:
             if self.plantLife < 100:
                 self.plantLife += amount
-                return 1
+                return 5
         return 0
 
     #Reset plant back to original state of the game

@@ -7,6 +7,7 @@ import ScoreText
 import random
 import Button
 from collections import defaultdict
+import csv
 
 FPS =60
 #Player or AI
@@ -15,8 +16,8 @@ playerPlaying = False
 
 #Moves
 moves = ["Up", "Down", "Water", "Fill"]
-LEARNING_RATE = 0.5
-DISCOUNT_FACTOR = 0.8
+LEARNING_RATE = 0.3
+DISCOUNT_FACTOR = 0.9
 
 # Initialize pygame
 pygame.init()
@@ -108,12 +109,6 @@ class GreedyController(Controller):
         # update table
         Q = self.policy
 
-        # Keep track of the history (for offline learning)
-        # calculate features:
-        # s_features = self.state_to_features(state)
-        # sprime_features = self.state_to_features( new_state )
-        # self.history.append( s_features + [action, reward] + sprime_features  )
-
         # find what the best predicted 'next reward' would have been
         max_succ = 0
         if Q[str(new_state)]:
@@ -173,7 +168,8 @@ class ApproxController(Controller):
 
         #some variables for watering, requires MANUAL change if changed in plants
         wateringEffect = 5
-
+        fillEffect = 1
+        removeWaterEffect=0.5
         features = []
 
         #Distance bettween player and lowest life plant
@@ -222,11 +218,43 @@ class ApproxController(Controller):
             for (i, plantline) in enumerate(currrentGarden):
                 if playerLayer == i:
                     for plant in range(len(plantline) - 1):
-                        if plantline[plant] < 100:
-                            currentGardenHealth += wateringEffect
+                        if plantline[-1]>0:
+                            if plantline[plant] < 100:
+                                currentGardenHealth += wateringEffect
 
         difInGardenHealth = (currentGardenHealth - healthyGarden) / healthyGarden
         features.append(difInGardenHealth)
+
+        # Difference between a full water amount and current water of the garden
+        fullTanks = numbOfPlantLines * 100
+        currentwater = 0
+
+        # state
+        for (i, plantline) in enumerate(currrentGarden):
+            for plant in range(len(plantline) - 1):
+                if plant == len(plantline) - 1:
+                    currentwater += plantline[plant]
+
+        # action
+        if action == "Water":
+            # add effect
+            for (i, plantline) in enumerate(currrentGarden):
+                if playerLayer == i:
+                    for plant in range(len(plantline) - 1):
+                        if plant == len(plantline) - 1:
+                            if plantline[len(plantline)] < 100:
+                                currentwater -= removeWaterEffect
+        elif action == "Fill":
+            # add effect
+            for (i, plantline) in enumerate(currrentGarden):
+                if playerLayer == i:
+                    for plant in range(len(plantline) - 1):
+                        if plant == len(plantline) - 1:
+                            if plantline[len(plantline)] < 100:
+                                currentwater += fillEffect
+
+        difWater = (currentwater - fullTanks) / fullTanks
+        features.append(difWater)
 
         return features
 
@@ -251,7 +279,7 @@ class ApproxController(Controller):
         self.state = new_state
 
 
-    def update(self, s, action, reward, s_prime, discountFactor=0.8, learningRate=0.001):
+    def update(self, s, action, reward, s_prime, discountFactor=0.9, learningRate=0.9):
         """Adjust the weights to adapt to observations"""
 
         # 1. get the features for the starting state
@@ -302,6 +330,7 @@ class Game():
         self.mousepos = (0, 0)
         self.aiLoops = 5
         self.internalScore = 0
+        self.highscore = 0
 
 
     # Draw function
@@ -432,7 +461,6 @@ class Game():
             if self.gameState == 0:
                 self.gameState = 1
 
-            #if self.aiLoops > 0:
             currentState = self.WorldState()
             oldscore = self.internalScore
             move = controller.get_move(currentState)
@@ -442,18 +470,22 @@ class Game():
             elif move == "Down":
                 player.PlayerMove(False)
             elif move == "Water":
-                self.internalScore += sum(garden[player.currentLine].WaterPlants())
-                garden[player.currentLine].waterTank.WateringPlants(0.1)
+                if garden[player.currentLine].waterTank.waterAmount>0:
+                    self.internalScore += sum(garden[player.currentLine].WaterPlants())
+                    garden[player.currentLine].waterTank.WateringPlants(0.5)
+
             elif move == "Fill":
                 self.internalScore += garden[player.currentLine].waterTank.Filling(1)
 
             if player.currentlifes <= 0:
+                if self.highscore < score.content:
+                    self.highscore = score.content
+                    with open('HighScores.txt', mode='a') as highscroFile:
+                        highscroFile.write(f'\n{self.highscore},{controller.weights[0]},{controller.weights[1]},{controller.weights[2]}')
+                        print ("tried to write")
+
                 self.ResetGame(player)
                 self.aiLoops -= 1
-            #else:
-                #self.gameState = 2
-                #print("ended ai loops")
-            # Ai play loop
 
             self.PlantLoop()
             self.UpdatePlants()
@@ -469,8 +501,9 @@ class Game():
 
             if self.gameState == 1:
                 if keysPressed[pygame.K_RIGHT]:
-                    garden[player.currentLine].WaterPlants()
-                    garden[player.currentLine].waterTank.WateringPlants(0.1)
+                    if garden[player.currentLine].waterTank.waterAmount > 0:
+                        garden[player.currentLine].WaterPlants()
+                        garden[player.currentLine].waterTank.WateringPlants(0.5)
                 elif keysPressed[pygame.K_SPACE]:
                     garden[player.currentLine].waterTank.Filling(1)
 
@@ -490,6 +523,24 @@ def main():
     game = Game()
     controller = ApproxController(None)
 
+    #check if there is a saved set of modifiers
+    with open('FeatureValues.txt','r') as file:
+        data = file.read().split(',')
+        floats = []
+        for elem in data:
+            try:
+                floats.append(float(elem))
+            except ValueError:
+                pass
+        if floats:
+            if floats[0] != 0 or floats[1] != 0 or floats[2] != 0:
+                controller = ApproxController(floats)
+                print("Start with modi")
+
+    with open('HighScores.txt', mode='a') as highscroFile:
+        highscroFile.write(f'\n-------- New game ----------')
+
+
 
     running = True
     while running:
@@ -497,7 +548,7 @@ def main():
         for event in pygame.event.get():
             game.PlayerInputs(event)
             if event.type == pygame.QUIT:
-                running = False
+                    running = False
         game.GameLoop(controller)
 
     pygame.quit()
